@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 The config function seems useful for automating the set up process. However,
-with conda, at least, their does not appear to be a default database.ini file.
+with conda, at least, there does not appear to be a default database.ini file.
 It might be true that there never is such a thing, so, regardless, it might be
 necessary to create one. Therefore, I am creating a function to build an ini
 file and initialize a database connection, using it to configure the database
@@ -16,6 +16,7 @@ import os
 import psycopg2 as pq
 import site
 import subprocess as sp
+import time
 
 # This is the python environment/ virtual environment
 sqlenv = site.getsitepackages()[0]
@@ -30,7 +31,7 @@ env['PGDATA'] = pgdata
 
 def initdb(database='postgres', password='postgres'):
     '''
-    Experimenting with the best way to do this so I don't have to ever go
+    Experimenting with the best way to do this so we don't ever have to go
     into the command line for postgres.
     '''
     # This ensures we have a database data folder
@@ -46,19 +47,22 @@ def initdb(database='postgres', password='postgres'):
         for s in statement:    
             print(s)
 
-    # This is the path to our postgres server configuration
-    init_path = 'database.ini'
-
-    # And this ensures we have such a thing
-    init = ConfigParser()
-    init['postgresql'] = {'host': 'localhost', 'database': database,
-                         'user': user, 'password': password}
-    with open(init_path, 'w') as file:
-        init.write(file)
+        # This is the path to our postgres server configuration
+        init_path = 'database.ini'
+    
+        # And this ensures we have such a thing
+        init = ConfigParser()
+        init['postgresql'] = {'host': 'localhost', 'database': database,
+                             'user': user, 'password': password}
+        with open(init_path, 'w') as file:
+            init.write(file)
 
     r = sp.Popen(['pg_ctl', 'start'], stderr=sp.STDOUT, stdout=sp.PIPE,
                  env=env)  
-
+    statement = str(r.stdout.read(), 'utf-8').replace('\r', '')
+    statement = statement.split('\n')
+    for s in statement:    
+        print(s)
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser
@@ -113,3 +117,22 @@ def disconnect():
     statement = statement.split('\n')
     for s in statement:    
         print(s)
+
+class runcmd:
+    def __init__(self, curs):
+        self.curs = curs
+
+    def run(self, command):
+        start = time.time()
+        self.curs.execute(command)
+        end = time.time()
+        seconds = end - start
+        minutes = round(seconds/60, 2)
+        try:
+            return self.curs.fetchmany(15)
+            print("Finished in {} ".format(minutes))
+        except:
+            print("Command Run")
+            print("Finished in {} ".format(minutes))
+
+    

@@ -15,4 +15,3 @@ dependencies:
   - spyder 
   - matplotlib
   - cartopy
-  - postgis
